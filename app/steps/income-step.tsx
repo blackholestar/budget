@@ -48,14 +48,19 @@ function classify(text: string): InputProblem {
 }
 
 export function IncomeStep({ data, updateData }: StepProps) {
-  // The raw text lives here (not in the stored data) so we can tell an
-  // explicit "0" from an empty box, and so a bad entry is never stored.
-  const [text, setText] = useState(() =>
-    data.income > 0 ? String(Math.round(data.income * 100) / 100) : "",
-  );
+  // What the user has typed in this visit, kept here (not in the stored data)
+  // so we can tell an explicit "0" from an empty box, and so a bad entry is
+  // never stored. `null` means "nothing typed yet": the box then shows the
+  // stored income. It must not be seeded from `data` in a state initializer,
+  // because on a page reload this step first renders before the saved budget
+  // has loaded, which would leave the box blank.
+  const [typed, setTyped] = useState<string | null>(null);
+  const text =
+    typed ??
+    (data.income > 0 ? String(Math.round(data.income * 100) / 100) : "");
 
   const handleTextChange = (next: string) => {
-    setText(next);
+    setTyped(next);
     const parsed = parseAmount(next);
     // Only a valid positive amount is stored. Anything else (empty, invalid,
     // negative, zero) clears the stored income back to "none" so a stale value
