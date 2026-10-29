@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlusIcon } from "lucide-react";
@@ -9,53 +8,14 @@ import {
   availableDailyIncome,
   totalGoalProportion,
   unallocatedDailyIncome,
-  type Goal,
 } from "./types";
-import { GoalCard } from "./components/goal-card";
-import { GoalDialog } from "./components/goal-dialog";
 import { GoalPie } from "./components/goal-pie";
+import { useGoalEditor } from "./components/use-goal-editor";
 import { formatPerDay, formatPercent } from "./components/money";
 
 export function GoalsStep({ data, updateData }: StepProps) {
   const available = availableDailyIncome(data);
-
-  // Dialog state: open, and which goal is being edited (null = adding new).
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Goal | null>(null);
-
-  const openAdd = () => {
-    setEditing(null);
-    setDialogOpen(true);
-  };
-  const openEdit = (goal: Goal) => {
-    setEditing(goal);
-    setDialogOpen(true);
-  };
-
-  const upsertGoal = (goal: Goal) =>
-    updateData({
-      goals: data.goals.some((g) => g.id === goal.id)
-        ? data.goals.map((g) => (g.id === goal.id ? goal : g))
-        : [...data.goals, goal],
-    });
-
-  const changeGoal = (goal: Goal) =>
-    updateData({
-      goals: data.goals.map((g) => (g.id === goal.id ? goal : g)),
-    });
-
-  const removeGoal = (id: string) =>
-    updateData({ goals: data.goals.filter((g) => g.id !== id) });
-
-  const dialog = (
-    <GoalDialog
-      open={dialogOpen}
-      goal={editing}
-      availableDailyIncome={available}
-      onOpenChange={setDialogOpen}
-      onSave={upsertGoal}
-    />
-  );
+  const { cards, dialog, openAdd } = useGoalEditor(data, updateData);
 
   // Empty state: the fullscreen "What do you want?" prompt.
   if (data.goals.length === 0) {
@@ -102,18 +62,7 @@ export function GoalsStep({ data, updateData }: StepProps) {
       <GoalPie data={data} />
 
       {/* Goal list. */}
-      <div className="flex flex-col gap-3">
-        {data.goals.map((goal) => (
-          <GoalCard
-            key={goal.id}
-            goal={goal}
-            availableDailyIncome={available}
-            onChange={changeGoal}
-            onEdit={() => openEdit(goal)}
-            onRemove={() => removeGoal(goal.id)}
-          />
-        ))}
-      </div>
+      {cards}
 
       {/* Totals. */}
       <Card size="sm">

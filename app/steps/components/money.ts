@@ -16,10 +16,13 @@ export function formatPerDay(amount: number): string {
   return `${formatMoney(amount)}/day`;
 }
 
-/** Format a 0..1 proportion as a percent, e.g. 0.25 -> "25%". */
-export function formatPercent(proportion: number): string {
+/**
+ * Format a 0..1 proportion as a percent, e.g. 0.25 -> "25%". `digits` sets the
+ * decimal places (default 0), e.g. formatPercent(0.0125, 1) -> "1.3%".
+ */
+export function formatPercent(proportion: number, digits = 0): string {
   if (!Number.isFinite(proportion)) return "—";
-  return `${Math.round(proportion * 100)}%`;
+  return `${(proportion * 100).toFixed(digits)}%`;
 }
 
 /** Format a day count, e.g. 25.4 -> "25 days", Infinity -> "never". */

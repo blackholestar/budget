@@ -13,7 +13,7 @@ import {
   dailyGoalCommitment,
   type BudgetData,
 } from "../types";
-import { formatPerDay } from "./money";
+import { formatPercent } from "./money";
 
 const PALETTE = [
   "var(--chart-1)",
@@ -29,6 +29,10 @@ const PALETTE = [
  * if there are more goals than colors.
  */
 export function GoalPie({ data }: { data: BudgetData }) {
+  // Tooltips show each slice as a share of free income (income left after
+  // necessities), matching the "% of free" figure on each goal card.
+  const free = availableDailyIncome(data);
+
   const { slices, config } = useMemo(() => {
     const available = availableDailyIncome(data);
     const committed = dailyGoalCommitment(data);
@@ -80,7 +84,7 @@ export function GoalPie({ data }: { data: BudgetData }) {
                 <span className="flex w-full justify-between gap-3">
                   <span className="text-muted-foreground">{name}</span>
                   <span className="font-mono tabular-nums">
-                    {formatPerDay(Number(value))}
+                    {formatPercent(Number(value) / free, 1)}
                   </span>
                 </span>
               )}

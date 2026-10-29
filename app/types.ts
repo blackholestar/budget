@@ -121,7 +121,7 @@ export const ALL_PERIODS: Period[] = [
   "2WEEKS",
   "MONTH",
   "3MONTHS",
-  "4MONTHS",
+  //"4MONTHS",
   "6MONTHS",
   "YEAR",
 ];
@@ -171,12 +171,12 @@ export interface NecessityCategoryInfo {
 
 /** The only necessity categories a user may pick from. */
 export const NECESSITY_CATEGORIES: NecessityCategoryInfo[] = [
-  { id: "HOUSING", label: "Housing (rent/mortgage)", icon: "🏠" },
+  { id: "HOUSING", label: "Housing", icon: "🏠" },
   { id: "UTILITIES", label: "Utilities", icon: "💡" },
   { id: "GROCERIES", label: "Groceries", icon: "🛒" },
   { id: "TUITION", label: "Tuition", icon: "🎓" },
   { id: "SUBSCRIPTIONS", label: "Subscriptions & memberships", icon: "🔁" },
-  { id: "DEBT", label: "Debt / interest payments", icon: "💳" },
+  { id: "DEBT", label: "Debt payments", icon: "💳" },
   { id: "CAR", label: "Car", icon: "🚗" },
   { id: "TRANSIT", label: "Transit", icon: "🚆" },
   { id: "CONNECTIVITY", label: "Internet / cell", icon: "📶" },
@@ -238,17 +238,21 @@ export const GOAL_ICONS: { icon: string; label: string }[] = [
   { icon: "💻", label: "Tech" },
   { icon: "🏡", label: "Home" },
   { icon: "🚗", label: "Car" },
-  { icon: "🎉", label: "Fun / party" },
+  { icon: "🎉", label: "Party" },
   { icon: "🎨", label: "Hobby" },
-  { icon: "🎸", label: "Musical instrument" },
+  { icon: "🎸", label: "Music" },
   { icon: "💍", label: "Engagement ring" },
   { icon: "📚", label: "Learning" },
   { icon: "🏅", label: "Sports" },
   { icon: "🎵", label: "Concert" },
   { icon: "🔨", label: "Renovation" },
-  { icon: "💳", label: "Pay off debt" },
+  { icon: "💳", label: "Debt" },
   { icon: "🛟", label: "Emergency fund" },
   { icon: "📈", label: "Investment" },
+  { icon: "🏥", label: "Healthcare"},
+  { icon: "🧘‍♀️", label: "Meditation"},
+  { icon: "❤️", label: "Heart"},
+
 ];
 
 /**

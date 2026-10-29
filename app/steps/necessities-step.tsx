@@ -14,12 +14,13 @@ import { Trash2Icon } from "lucide-react";
 import type { StepProps } from "./types";
 import {
   NECESSITY_CATEGORIES,
+  availableDailyIncome,
   createNecessity,
   dailyIncome,
   dailyNecessities,
   necessityCategoryInfo,
   necessityDailyCost,
-  unallocatedDailyIncome,
+  type BudgetData,
   type Necessity,
   type NecessityCategory,
   type Period,
@@ -27,10 +28,24 @@ import {
 import { AmountPeriodInput } from "./components/amount-period-input";
 import { formatMoney, formatPerDay, formatPercent } from "./components/money";
 
+/**
+ * Gate for leaving this step: necessities alone must not exceed income. Goals
+ * are deliberately not considered here. Tiny epsilon avoids float noise when
+ * amounts entered over different periods are equal in principle.
+ */
+export function validateNecessities(data: BudgetData): string | null {
+  const over = dailyNecessities(data) - dailyIncome(data);
+  return over > 1e-9
+    ? `Your necessities exceed your income by ${formatMoney(over)}/day. Lower them to continue.`
+    : null;
+}
+
 export function NecessitiesStep({ data, updateData }: StepProps) {
   const income = dailyIncome(data);
   const total = dailyNecessities(data);
-  const free = unallocatedDailyIncome(data);
+  // Income left after necessities only — goal spending is NOT subtracted here.
+  const free = availableDailyIncome(data);
+  const problem = validateNecessities(data);
 
   const share = (perDay: number) => (income > 0 ? perDay / income : NaN);
 
@@ -59,8 +74,8 @@ export function NecessitiesStep({ data, updateData }: StepProps) {
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold">Step 2 — Necessities</h2>
         <p className="text-sm text-muted-foreground">
-          The essentials you have to pay for. Only true needs here — everyday
-          shopping and dining out are goals, not necessities.
+          The essentials you have to pay for. Only true needs here — 
+          travel and dining out are goals, not necessities.
         </p>
       </div>
 
@@ -153,10 +168,9 @@ export function NecessitiesStep({ data, updateData }: StepProps) {
             emphasize
             warn={free < 0}
           />
-          {free < 0 && (
-            <p className="text-sm text-destructive">
-              Your necessities exceed your income by{" "}
-              {formatMoney(-free)}/day.
+          {problem && (
+            <p role="alert" className="text-sm text-destructive">
+              {problem}
             </p>
           )}
         </CardContent>

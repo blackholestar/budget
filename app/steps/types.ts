@@ -23,6 +23,8 @@ export interface StepProps {
    * section "edit" shortcuts.
    */
   goToStep: (id: StepId) => void;
+  /** Reset the whole budget to its defaults and return to the first step. */
+  resetAll: () => void;
 }
 
 /** A section of the budget a step is responsible for. */
@@ -34,4 +36,10 @@ export interface StepDefinition {
   /** Human-readable label shown in the step selector. */
   label: string;
   Component: ComponentType<StepProps>;
+  /**
+   * Optional gate. Returns a message explaining what's wrong when this step's
+   * data blocks moving past it, or null when the user may proceed. The wizard
+   * refuses to reach any later step while an earlier step returns a message.
+   */
+  validate?: (data: BudgetData) => string | null;
 }

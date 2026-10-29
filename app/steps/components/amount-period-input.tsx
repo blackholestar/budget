@@ -39,6 +39,8 @@ export function AmountPeriodInput({
   amount,
   period,
   onAmountChange,
+  text,
+  onTextChange,
   onPeriodChange,
   placeholder = "0",
   className,
@@ -47,7 +49,16 @@ export function AmountPeriodInput({
 }: {
   amount: number;
   period: Period;
-  onAmountChange: (amount: number) => void;
+  /** Called with each successfully parsed amount (or 0 for an empty box). */
+  onAmountChange?: (amount: number) => void;
+  /**
+   * Optional controlled mode: when `text` is given, the box always shows it and
+   * the parent decides what to do with every keystroke via `onTextChange`
+   * (including invalid ones). Use this when the parent must validate raw input
+   * and should NOT receive unvalidated amounts.
+   */
+  text?: string;
+  onTextChange?: (text: string) => void;
   onPeriodChange: (period: Period) => void;
   placeholder?: string;
   className?: string;
@@ -61,11 +72,13 @@ export function AmountPeriodInput({
   const [draft, setDraft] = useState<string | null>(null);
   const editing = draft !== null;
 
-  const handleChange = (text: string) => {
-    setDraft(text);
-    const parsed = parseAmount(text);
+  const handleChange = (value: string) => {
+    setDraft(value);
+    onTextChange?.(value);
+    if (!onAmountChange) return;
+    const parsed = parseAmount(value);
     if (!Number.isNaN(parsed)) onAmountChange(parsed);
-    else if (text.trim() === "") onAmountChange(0);
+    else if (value.trim() === "") onAmountChange(0);
   };
 
   return (
@@ -80,7 +93,7 @@ export function AmountPeriodInput({
           placeholder={placeholder}
           aria-label={ariaLabel}
           aria-invalid={ariaInvalid}
-          value={editing ? draft : display(amount)}
+          value={text ?? (editing ? draft : display(amount))}
           onFocus={() => setDraft(display(amount))}
           onBlur={() => setDraft(null)}
           onChange={(e) => handleChange(e.target.value)}

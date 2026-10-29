@@ -1,8 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { StepProps } from "./types";
-import { dailyIncome, type BudgetMode } from "./types";
+import {
+  dailyIncome,
+  parseAmount,
+  type BudgetData,
+  type BudgetMode,
+} from "./types";
 import { AmountPeriodInput } from "./components/amount-period-input";
 import { formatPerDay } from "./components/money";
 
@@ -19,11 +25,47 @@ const MODES: { id: BudgetMode; label: string; hint: string }[] = [
   },
 ];
 
+/**
+ * Gate for leaving this step. `data.income` only ever holds a valid positive
+ * amount (or 0 meaning "none entered yet"), so a non-positive value means the
+ * user hasn't given us anything usable.
+ */
+export function validateIncome(data: BudgetData): string | null {
+  return Number.isFinite(data.income) && data.income > 0
+    ? null
+    : "Enter a valid income to continue.";
+}
+
+type InputProblem = "invalid" | "zero" | null;
+
+/** Classify what the user typed. Empty text is not a problem (nothing entered). */
+function classify(text: string): InputProblem {
+  if (text.trim() === "") return null;
+  const parsed = parseAmount(text);
+  if (!Number.isFinite(parsed) || parsed < 0) return "invalid";
+  if (parsed === 0) return "zero";
+  return null;
+}
+
 export function IncomeStep({ data, updateData }: StepProps) {
+  // The raw text lives here (not in the stored data) so we can tell an
+  // explicit "0" from an empty box, and so a bad entry is never stored.
+  const [text, setText] = useState(() =>
+    data.income > 0 ? String(Math.round(data.income * 100) / 100) : "",
+  );
+
+  const handleTextChange = (next: string) => {
+    setText(next);
+    const parsed = parseAmount(next);
+    // Only a valid positive amount is stored. Anything else (empty, invalid,
+    // negative, zero) clears the stored income back to "none" so a stale value
+    // can't be used while the box shows something else.
+    const valid = Number.isFinite(parsed) && parsed > 0;
+    updateData({ income: valid ? parsed : 0 });
+  };
+
+  const problem = classify(text);
   const perDay = dailyIncome(data);
-  const entered = Number.isFinite(data.income) ? data.income : 0;
-  const isZero = entered === 0;
-  const isInvalid = !Number.isFinite(data.income) || data.income < 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,27 +109,31 @@ export function IncomeStep({ data, updateData }: StepProps) {
         </label>
         <AmountPeriodInput
           amount={data.income}
+          text={text}
+          onTextChange={handleTextChange}
           period={data.incomePeriod}
-          onAmountChange={(income) => updateData({ income })}
           onPeriodChange={(incomePeriod) => updateData({ incomePeriod })}
           aria-label="Income amount"
-          aria-invalid={isInvalid}
+          aria-invalid={problem !== null}
         />
       </div>
 
-      {/* Errors, per spec. */}
-      {isInvalid && (
-        <p className="text-sm text-destructive">Please enter a valid amount.</p>
+      {/* Errors, per spec. Nothing shows until something has been typed. */}
+      {problem === "invalid" && (
+        <p role="alert" className="text-sm text-destructive">
+          Invalid amount.
+        </p>
       )}
-      {!isInvalid && isZero && (
-        <p className="text-sm text-destructive">
-          If you do not have a regular income, you can switch to “I have an
-          amount to spend” and enter the money you have available.
+      {problem === "zero" && (
+        <p role="alert" className="text-sm text-destructive">
+          {data.mode === "INCOME"
+            ? "If you do not have a regular income, you can use the amount of money you have available or the amount you wish to spend."
+            : "Please enter an amount greater than zero."}
         </p>
       )}
 
       {/* Per-day readout. */}
-      {!isInvalid && !isZero && (
+      {problem === null && data.income > 0 && (
         <Card size="sm">
           <CardContent className="flex items-baseline justify-between">
             <span className="text-sm text-muted-foreground">

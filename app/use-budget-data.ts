@@ -7,10 +7,11 @@ import { initialBudgetData, type BudgetData } from "./types";
 // Persistence
 // ---------------------------------------------------------------------------
 //
-// The budget currently lives in localStorage. Everything goes through the
-// BudgetStore interface below, so swapping in a server/database source later
-// means writing one more implementation of this interface — the hook and all
-// the UI stay unchanged.
+// The budget currently lives in the browser's localStorage (so it survives
+// reloads and server restarts). Everything goes through the BudgetStore
+// interface below, so swapping in a server/database source later means writing
+// one more implementation of this interface — the hook and all the UI stay
+// unchanged.
 
 export interface BudgetStore {
   load(): BudgetData | null;
@@ -49,7 +50,8 @@ export const localStorageBudgetStore: BudgetStore = {
  * render both use {@link initialBudgetData} (the server snapshot), avoiding a
  * hydration mismatch, then the real saved value is read on the client. State
  * lives in a ref and changes are broadcast to subscribers — the external store
- * here is "the saved budget", with localStorage as its backing medium.
+ * here is "the current budget", backed by whatever {@link BudgetStore} is given
+ * (localStorage by default).
  */
 export function useBudgetData(store: BudgetStore = localStorageBudgetStore) {
   // One subscriber set + cached snapshot per hook instance.

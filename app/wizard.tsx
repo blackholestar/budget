@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { steps } from "./steps";
+import { steps, initialBudgetData } from "./steps";
 import { useBudgetData } from "./use-budget-data";
 
 export function Wizard() {
@@ -19,11 +19,25 @@ export function Wizard() {
   // with "Next" is the only way to push this forward.
   const [maxViewedStep, setMaxViewedStep] = useState(0);
 
+  // The first step (if any) that currently blocks moving forward, with its
+  // message. Every step after it is unreachable until it's fixed.
+  const blocker = (() => {
+    for (let i = 0; i < steps.length; i++) {
+      const message = steps[i].validate?.(data) ?? null;
+      if (message) return { index: i, message };
+    }
+    return null;
+  })();
+
   // A step is reachable if it's already been viewed OR it's the single next
-  // step after the furthest viewed one. Advancing one step at a time is fine;
-  // only a jump that *skips* an unvisited page is disallowed.
+  // step after the furthest viewed one (only a jump that *skips* an unvisited
+  // page is disallowed) — AND no earlier step has invalid data. Going back is
+  // therefore always possible, going forward past a problem never is.
   const canReach = (index: number) =>
-    index >= 0 && index <= maxViewedStep + 1 && index < steps.length;
+    index >= 0 &&
+    index < steps.length &&
+    index <= maxViewedStep + 1 &&
+    (blocker === null || index <= blocker.index);
 
   const goToStep = (index: number) => {
     if (!canReach(index)) return;
@@ -40,9 +54,18 @@ export function Wizard() {
     if (index !== -1) goToStep(index);
   };
 
+  // Wipe the budget back to its defaults (this also overwrites the saved copy)
+  // and start over from the first step.
+  const resetAll = () => {
+    updateData(initialBudgetData);
+    setCurrentStep(0);
+    setMaxViewedStep(0);
+  };
+
   const { Component } = steps[currentStep];
   const isFirst = currentStep === 0;
   const isLast = currentStep === steps.length - 1;
+  const nextBlocked = !isLast && !canReach(currentStep + 1);
 
   return (
     <div className="flex w-full max-w-xl flex-col gap-8">
@@ -74,6 +97,7 @@ export function Wizard() {
           data={data}
           updateData={updateData}
           goToStep={goToStepById}
+          resetAll={resetAll}
         />
       </div>
 
@@ -87,10 +111,19 @@ export function Wizard() {
         >
           Back
         </Button>
-        <Button type="button" onClick={goNext} disabled={isLast}>
+        <Button
+          type="button"
+          onClick={goNext}
+          disabled={isLast || nextBlocked}
+        >
           Next
         </Button>
       </div>
+      {nextBlocked && blocker && (
+        <p className="-mt-4 text-right text-sm text-muted-foreground">
+          {blocker.message}
+        </p>
+      )}
     </div>
   );
 }

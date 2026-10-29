@@ -1,9 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Pencil } from "lucide-react";
+import { Pencil, RotateCcw } from "lucide-react";
 import type { StepId, StepProps } from "./types";
 import {
   availableDailyIncome,
@@ -12,23 +21,24 @@ import {
   necessityCategoryInfo,
   necessityDailyCost,
   unallocatedDailyIncome,
-  type Goal,
 } from "./types";
-import { GoalCard } from "./components/goal-card";
 import { GoalPie } from "./components/goal-pie";
+import { useGoalEditor } from "./components/use-goal-editor";
 import { formatPerDay, formatPercent } from "./components/money";
 
-export function OverviewStep({ data, updateData, goToStep }: StepProps) {
+export function OverviewStep({
+  data,
+  updateData,
+  goToStep,
+  resetAll,
+}: StepProps) {
   const income = dailyIncome(data);
   const necessitiesTotal = dailyNecessities(data);
   const available = availableDailyIncome(data);
   const leftover = unallocatedDailyIncome(data);
   const showIncomePercent = data.mode === "INCOME";
-
-  const changeGoal = (goal: Goal) =>
-    updateData({
-      goals: data.goals.map((g) => (g.id === goal.id ? goal : g)),
-    });
+  // Same goal cards + edit dialog as step 3.
+  const { cards, dialog } = useGoalEditor(data, updateData);
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,14 +122,7 @@ export function OverviewStep({ data, updateData, goToStep }: StepProps) {
         ) : (
           <>
             <GoalPie data={data} />
-            {data.goals.map((goal) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                availableDailyIncome={available}
-                onChange={changeGoal}
-              />
-            ))}
+            {cards}
           </>
         )}
       </div>
@@ -145,7 +148,55 @@ export function OverviewStep({ data, updateData, goToStep }: StepProps) {
           </span>
         </CardContent>
       </Card>
+
+      <ResetButton onReset={resetAll} />
+
+      {dialog}
     </div>
+  );
+}
+
+/** Button + confirmation that wipes the whole budget back to its defaults. */
+function ResetButton({ onReset }: { onReset: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="destructive"
+        className="self-start"
+        onClick={() => setOpen(true)}
+      >
+        <RotateCcw /> Reset everything
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset your budget?</DialogTitle>
+            <DialogDescription>
+              This clears your income, necessities and goals, including the
+              copy saved in this browser, and takes you back to step 1. It
+              can&apos;t be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setOpen(false);
+                onReset();
+              }}
+            >
+              Reset
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
